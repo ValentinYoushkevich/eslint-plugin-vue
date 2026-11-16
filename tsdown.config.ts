@@ -3,7 +3,13 @@ import { defineConfig } from 'tsdown'
 export default defineConfig({
   entry: ['lib/index.ts', 'lib/configs/**/*.ts', 'lib/removed-rules.ts'],
   format: ['cjs'],
-  copy: ['lib/index.d.ts', 'lib/eslint-typegen.d.ts'],
+  copy: [
+    'lib/index.d.ts',
+    'lib/eslint-typegen.d.ts',
+    // ES module entry point, see the comment in the file
+    'lib/index.mjs',
+    'lib/index.d.mts'
+  ],
   dts: false,
   deps: {
     neverBundle: ['typescript']

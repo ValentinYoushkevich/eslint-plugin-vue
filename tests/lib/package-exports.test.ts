@@ -40,21 +40,41 @@ describe('package.json exports', () => {
   ])(
     'with TypeScript moduleResolution %s',
     (_name, moduleResolution, module) => {
-      it.each([
-        ['eslint-plugin-vue', 'dist/index.d.ts'],
-        ['eslint-plugin-vue/types', 'dist/eslint-typegen.d.ts'],
-        ['eslint-plugin-vue/dist/eslint-typegen', 'dist/eslint-typegen.d.ts'],
-        ['eslint-plugin-vue/dist/eslint-typegen.js', 'dist/eslint-typegen.d.ts']
-      ])('should resolve the types of %s', (specifier, expected) => {
+      function resolveTypes(
+        specifier: string,
+        resolutionMode?: ts.ResolutionMode
+      ): string | undefined {
         const { resolvedModule } = ts.resolveModuleName(
           specifier,
           path.join(ROOT, 'tests/lib/package-exports.test.ts'),
           { module, moduleResolution },
-          ts.sys
+          ts.sys,
+          undefined,
+          undefined,
+          resolutionMode
         )
+        return resolvedModule && path.resolve(resolvedModule.resolvedFileName)
+      }
+
+      it.each([
+        ['eslint-plugin-vue/types', 'dist/eslint-typegen.d.ts'],
+        ['eslint-plugin-vue/dist/eslint-typegen', 'dist/eslint-typegen.d.ts'],
+        ['eslint-plugin-vue/dist/eslint-typegen.js', 'dist/eslint-typegen.d.ts']
+      ])('should resolve the types of %s', (specifier, expected) => {
+        assert.strictEqual(resolveTypes(specifier), path.join(ROOT, expected))
+      })
+
+      it('should resolve the ES module types of an `import` of the package', () => {
         assert.strictEqual(
-          resolvedModule && path.resolve(resolvedModule.resolvedFileName),
-          path.join(ROOT, expected)
+          resolveTypes('eslint-plugin-vue', ts.ModuleKind.ESNext),
+          path.join(ROOT, 'dist/index.d.mts')
+        )
+      })
+
+      it('should resolve the CommonJS types of a `require()` of the package', () => {
+        assert.strictEqual(
+          resolveTypes('eslint-plugin-vue', ts.ModuleKind.CommonJS),
+          path.join(ROOT, 'dist/index.d.ts')
         )
       })
     }
